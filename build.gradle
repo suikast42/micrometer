@@ -2,7 +2,9 @@ buildscript {
     repositories {
         jcenter()
         maven { url 'https://plugins.gradle.org/m2/' }
-        mavenLocal()
+        maven {
+            url uri('F:/IDE/.m2/repository')
+        }
     }
     dependencies {
         classpath 'org.ow2.asm:asm:5.0.3'
