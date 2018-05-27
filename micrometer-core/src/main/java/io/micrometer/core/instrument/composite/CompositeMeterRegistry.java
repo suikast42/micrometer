@@ -71,6 +71,10 @@ public class CompositeMeterRegistry extends MeterRegistry {
     }
 
     @Override
+    public void measure(Point point) {
+        registries.forEach(r -> r.measure(point));
+    }
+    @Override
     protected Timer newTimer(Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, PauseDetector pauseDetector) {
         return new CompositeTimer(id, clock, distributionStatisticConfig, pauseDetector);
     }

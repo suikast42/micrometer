@@ -29,6 +29,8 @@ import io.micrometer.core.instrument.util.TimeUtils;
 import io.micrometer.core.lang.Nullable;
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
@@ -59,6 +61,7 @@ public abstract class MeterRegistry implements AutoCloseable {
     private final More more = new More();
     private volatile PMap<Id, Meter> meterMap = HashTreePMap.empty();
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private PauseDetector pauseDetector = new ClockDriftPauseDetector(
             Duration.ofMillis(100),
             Duration.ofMillis(100)
@@ -203,6 +206,10 @@ public abstract class MeterRegistry implements AutoCloseable {
      * @return the registry's base TimeUnit. Must not be null.
      */
     protected abstract TimeUnit getBaseTimeUnit();
+
+    public void measure(Point point) {
+        logger.warn("measure not implemented");
+    }
 
     /**
      * Every custom registry implementation should define a default histogram expiry at a minimum:

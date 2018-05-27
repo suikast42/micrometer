@@ -22,6 +22,9 @@ import io.micrometer.core.instrument.util.IOUtils;
 import io.micrometer.core.instrument.util.MeterPartition;
 import io.micrometer.core.instrument.util.StringUtils;
 import io.micrometer.core.lang.Nullable;
+import org.influxdb.BatchOptions;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +36,9 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.GZIPOutputStream;
 
 import static java.util.stream.Collectors.joining;
@@ -46,12 +51,27 @@ public class InfluxMeterRegistry extends StepMeterRegistry {
     private final InfluxConfig config;
     private final Logger logger = LoggerFactory.getLogger(InfluxMeterRegistry.class);
     private boolean databaseExists = false;
+    private InfluxDB influxDB ;
+
 
     public InfluxMeterRegistry(InfluxConfig config, Clock clock, ThreadFactory threadFactory) {
         super(config, clock);
         this.config().namingConvention(new InfluxNamingConvention());
         this.config = config;
         start(threadFactory);
+        // TODO: 27.05.2018 username and password 
+        influxDB=  InfluxDBFactory.connect(config.uri());
+        influxDB.setDatabase(config.db());
+        // TODO: 27.05.2018 Rentition policy 
+//        influxDB.setRetentionPolicy(config.retentionPolicy()) ;
+        // TODO: 27.05.2018 Move this to config
+        // Flush every 2000 Points, at least every 1000 ms
+        influxDB.enableBatch(BatchOptions.DEFAULTS.flushDuration(1_000).actions(2000).exceptionHandler(
+            (failedPoints, throwable) -> {
+                final List<String> failed = StreamSupport.stream(failedPoints.spliterator(), false)
+                    .map(point -> point.lineProtocol()).collect(Collectors.toList());
+                logger.error("Can't write points "+ String.join("\n", failed), throwable);})
+        );
     }
 
     public InfluxMeterRegistry(InfluxConfig config, Clock clock) {
@@ -88,7 +108,17 @@ public class InfluxMeterRegistry extends StepMeterRegistry {
             quietlyCloseUrlConnection(con);
         }
     }
-
+    public void measure(Point point) {
+        createDatabaseIfNecessary();
+        // TODO: 27.05.2018 Make async ???  
+        final org.influxdb.dto.Point influxpoint = org.influxdb.dto.Point.measurement(point.getMeasurement())
+            .fields(point.getFields())
+            .tag(point.getTags())
+            .time(point.getTime(), point.getPrecision())
+            .build();
+        influxDB.write(influxpoint);
+    }
+    
     @Override
     protected void publish() {
         createDatabaseIfNecessary();
@@ -195,6 +225,18 @@ public class InfluxMeterRegistry extends StepMeterRegistry {
         try {
             if (con != null) {
                 con.disconnect();
+            }
+        } catch (Exception ignore) {
+        }
+       
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        try {
+            if (influxDB != null) {
+                influxDB.close();
             }
         } catch (Exception ignore) {
         }
