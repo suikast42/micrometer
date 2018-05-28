@@ -1,5 +1,7 @@
 package io.micrometer.core.instrument;
 
+import io.micrometer.core.instrument.config.NamingConvention;
+
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
@@ -95,13 +97,7 @@ public class Point  {
         return builder.toString();
     }
 
-    public String getMeasurement() {
-        return measurement;
-    }
 
-    public Map<String, String> getTags() {
-        return Collections.unmodifiableMap(tags);
-    }
 
     public Long getTime() {
         return time;
@@ -111,9 +107,30 @@ public class Point  {
         this.time = time;
     }
 
+    public String getMeasurement(MeterRegistry registry) {
+        final NamingConvention namingConvention = registry.config().namingConvention();
+        return namingConvention.name(measurement, Meter.Type.OTHER);
+    }
 
-    public Map<String, Object> getFields() {
-        return  Collections.unmodifiableMap(fields);
+    public Map<String, String> getTags(MeterRegistry registry) {
+        final NamingConvention namingConvention = registry.config().namingConvention();
+        Map<String,String> result = new HashMap<>() ;
+        final Set<Tag> commonTags = registry.config().getCommonTags();
+       commonTags.forEach( tag ->{
+           result.put(namingConvention.tagKey(tag.getKey()),namingConvention.tagValue(tag.getValue()));
+       });
+        tags.forEach((k,v)->{
+            result.put(namingConvention.tagKey(k),namingConvention.tagValue(v));
+        });
+        return result;
+    }
+    public Map<String, Object> getFields(MeterRegistry registry) {
+        final NamingConvention namingConvention = registry.config().namingConvention();
+        Map<String,Object> result = new HashMap<>() ;
+        fields.forEach((k,v)->{
+            result.put(namingConvention.tagKey(k),v);
+        });
+        return result;
     }
 
     public TimeUnit getPrecision() {

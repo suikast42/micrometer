@@ -16,6 +16,7 @@
 package io.micrometer.influx;
 
 import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.core.instrument.step.StepMeterRegistry;
 import io.micrometer.core.instrument.util.DoubleFormat;
 import io.micrometer.core.instrument.util.IOUtils;
@@ -110,10 +111,10 @@ public class InfluxMeterRegistry extends StepMeterRegistry {
     }
     public void measure(Point point) {
         createDatabaseIfNecessary();
-        // TODO: 27.05.2018 Make async ???  
-        final org.influxdb.dto.Point influxpoint = org.influxdb.dto.Point.measurement(point.getMeasurement())
-            .fields(point.getFields())
-            .tag(point.getTags())
+        // TODO: 27.05.2018 Make async ???
+        final org.influxdb.dto.Point influxpoint = org.influxdb.dto.Point.measurement(point.getMeasurement(this))
+            .fields(point.getFields(this))
+            .tag(point.getTags(this))
             .time(point.getTime(), point.getPrecision())
             .build();
         influxDB.write(influxpoint);

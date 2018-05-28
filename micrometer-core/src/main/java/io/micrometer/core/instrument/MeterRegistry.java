@@ -591,11 +591,12 @@ public abstract class MeterRegistry implements AutoCloseable {
 
         return true;
     }
-
+    private static Set<Tag> commonTags = new HashSet<>();
     /**
      * Access to configuration options for this registry.
      */
     public class Config {
+
         /**
          * Append a list of common tags to apply to all metrics reported to the monitoring system.
          *
@@ -604,6 +605,9 @@ public abstract class MeterRegistry implements AutoCloseable {
          */
         public Config commonTags(Iterable<Tag> tags) {
             meterFilter(MeterFilter.commonTags(tags));
+            for (Tag tag : tags) {
+                commonTags.add(tag);
+            }
             return this;
         }
 
@@ -666,6 +670,9 @@ public abstract class MeterRegistry implements AutoCloseable {
             return clock;
         }
 
+        public Set<Tag>  getCommonTags(){
+            return Collections.unmodifiableSet(commonTags);
+        }
         /**
          * Sets the default pause detector to use for all timers in this registry.
          *
