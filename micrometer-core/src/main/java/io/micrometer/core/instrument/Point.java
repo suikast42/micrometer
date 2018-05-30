@@ -190,5 +190,13 @@ public class Point {
         public Point build() {
             return new Point().measurement(measurement).fields(fields).tags(tags).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         }
+
+        /**
+         * Convience method for pushing points to registry
+         * @param registry
+         */
+        public void push (MeterRegistry registry) {
+            registry.measure(this.build());
+        }
     }
 }
