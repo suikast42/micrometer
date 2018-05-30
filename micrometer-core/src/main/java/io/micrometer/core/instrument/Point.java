@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -127,9 +129,9 @@ public class Point {
     public TimeUnit getPrecision() {
         return TimeUnit.NANOSECONDS;
     }
+    private static  ExecutorService executorService = Executors.newCachedThreadPool();
 
     public class Builder {
-
         private String measurement;
         private Map<String, String> tags;
         private Map<String, Object> fields;
@@ -192,11 +194,11 @@ public class Point {
         }
 
         /**
-         * Convience method for pushing points to registry
+         * Async push
          * @param registry
          */
         public void push (MeterRegistry registry) {
-            registry.measure(this.build());
+            executorService.execute(()-> registry.measure(this.build()));
         }
     }
 }
