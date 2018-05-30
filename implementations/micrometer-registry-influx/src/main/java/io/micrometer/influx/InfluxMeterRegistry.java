@@ -110,6 +110,9 @@ public class InfluxMeterRegistry extends StepMeterRegistry {
         }
     }
     public void measure(Point point) {
+        if(!config.enabled()){
+            return;
+        }
         createDatabaseIfNecessary();
         // TODO: 27.05.2018 Make async ???
         final org.influxdb.dto.Point influxpoint = org.influxdb.dto.Point.measurement(point.getMeasurement(this))

@@ -22,13 +22,30 @@ apply plugin: 'io.spring.release'
 allprojects {
     apply plugin: 'io.spring.license'
     apply plugin: 'com.dorongold.task-tree'
-  
+    apply plugin: 'java'
+    apply plugin: 'maven'
     afterEvaluate { project ->
-        
+
         println "I'm building $project.name with version $project.version"
     }
     group = 'io.micrometer'
     version = "1.1.0.Custom-SNAPSHOT"
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                repository(url: "http://10.83.34.151:8081/nexus/content/repositories/releases/") {
+                    authentication(userName: "admin", password: "admin123")
+                }
+
+                snapshotRepository(url: "http://10.83.34.151:8081/nexus/content/repositories/snapshots/") {
+                    authentication(userName: "admin", password: "admin123")
+                }
+
+
+            }
+        }
+    }
+    
 }
 
 subprojects {
@@ -73,7 +90,7 @@ subprojects {
         // set heap size for the test JVM(s)
         maxHeapSize = "1500m"
     }
-
+   
 }
 
 task wrapper(type: Wrapper) {
